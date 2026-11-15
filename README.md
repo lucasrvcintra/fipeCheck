@@ -79,7 +79,7 @@ Cada etapa será registrada em um commit separado, conforme sua conclusão.
 | --- | --- | --- | --- |
 | 1 | Estado inicial do projeto | `Initial commit` | Concluída — `c04f6f9` |
 | 2 | Reset do projeto Expo | `chore: reset project` | Concluída — `8cadb25` |
-| 3 | Proposta do aplicativo e descrição das telas | `docs: describe app proposal and screens` | Planejada |
+| 3 | Proposta do aplicativo e descrição das telas | `docs: describe app proposal and screens` | Concluída — `efc6850` |
 | 4 | Tema, componentes de tema e áreas seguras | `feat: configure theme and safe areas` | Planejada |
 | 5 | Drawer, abas e telas iniciais | `feat: add drawer and fipe tabs` | Planejada |
 | 6 | Formulário com tipo de veículo e marcas | `feat: start fipe form with vehicle types and brands` | Planejada |
