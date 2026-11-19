@@ -66,7 +66,7 @@ Com Node.js e npm instalados, execute na pasta do projeto:
 
 ```bash
 npm install
-npm expo start
+npm start
 ```
 
 O segundo comando iniciará o servidor de desenvolvimento do Expo. A validação principal do aplicativo será feita em Android.
@@ -93,3 +93,14 @@ Cada etapa será registrada em um commit separado, conforme sua conclusão.
 ## Apoio de inteligência artificial
 
 Foi utilizado o Codex, baseado em GPT-6, como apoio na escolha do nome fipeCheck, na elaboração do plano de implementação e na redação deste README.
+
+## Ampliação do comparativo
+
+O comparativo será exclusivo para carros e terá simulações de compra, financiamento e custo de uso. Consulta e favoritos continuam aceitando motos e caminhões.
+
+- Custo de uso: quilometragem e preço do litro compartilhados; consumo, manutenção e seguro por carro.
+- IPVA estimado: automóveis particulares de MG, com alíquota editável e opção manual para outras UFs.
+- Financiamento: entrada por carro, taxa efetiva anual e prazo compartilhados; SELIC/CDI apenas como referências.
+- Segurança: Latin NCAP e NHTSA ficam para uma evolução opcional, sem bloquear a entrega principal.
+
+A implementação seguirá commits separados para tema, navegação, marcas, modelos/anos, preço, favoritos, comparação, custo de uso, IPVA, financiamento, revisão e documentação.
