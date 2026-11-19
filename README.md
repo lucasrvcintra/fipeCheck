@@ -219,4 +219,9 @@ Esse item não faz parte da entrega principal implementada. A versão atual não
 
 ## Apoio de inteligência artificial
 
-Foi utilizado o Codex, baseado em GPT-6, como apoio na escolha do nome fipeCheck, na elaboração e revisão do plano e na redação deste README. Nesta implementação, o assistente também gerou código das funcionalidades e dos testes, consultou documentação e executou verificações. Os integrantes devem revisar, compreender e validar o material conforme as regras da disciplina.
+| Ferramenta | Modelo | Finalidade |
+| --- | --- | --- |
+| Codex | GPT-6 | Escolha do nome fipeCheck, elaboração e revisão do plano, redação deste README, consulta à documentação, execução de verificações (lint, TypeScript, Expo Doctor) e geração de código das funcionalidades e dos testes. |
+| Claude Code | Claude Opus 5.5 | Conferência do projeto em relação aos requisitos do enunciado e revisão desta seção do README. |
+
+A geração de código foi orientada pelos padrões e referências das entregas anteriores da disciplina (estrutura de pastas, Expo Router, `fetch`, AsyncStorage, componentes e estilização com `StyleSheet`), e não feita de forma livre. Todo o código foi revisado e ajustado pelos integrantes, que se responsabilizam por ele.
