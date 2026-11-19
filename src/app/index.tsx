@@ -1,17 +1,5 @@
-import { Text, View, StyleSheet } from "react-native";
-
-export default function Index() {
-  return (
-    <View style={styles.container}>
-      <Text>Edit src/app/index.tsx to edit this screen.</Text>
-    </View>
-  );
+import { Screen } from '@/components/Screen';
+import { ThemedText } from '@/components/ThemedText';
+export default function Home() {
+  return <Screen title="fipeCheck"><ThemedText>Consulte a FIPE e descubra os custos de compra e uso dos seus favoritos.</ThemedText></Screen>;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
