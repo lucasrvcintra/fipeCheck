@@ -1,3 +1,5 @@
+import { useFavorites } from '@/context/FavoritesContext';
+import { vehicleId } from '@/types/fipe';
 import { useState, useRef, useEffect } from 'react';
 import { Screen } from '@/components/Screen';
 import { OptionPicker } from '@/components/OptionPicker';
@@ -10,6 +12,7 @@ import { VehicleCard } from '@/components/VehicleCard';
 import type { VehicleDetails, VehicleQuery } from '@/types/fipe';
 import type { VehicleType } from '@/types/fipe';
 export default function Consultation() {
+  const favorites = useFavorites();
   const [type, setType] = useState<VehicleType>();
   const [brand, setBrand] = useState<string>();
   const [model, setModel] = useState<string>();
@@ -45,7 +48,8 @@ export default function Consultation() {
     <ActionButton label="Consultar FIPE" disabled={!year || loading} onPress={() => { void submit(); }} />
     {loading && <Feedback loading message="Consultando preço..." />}
     {error && <Feedback message={error} onRetry={() => { void submit(); }} />}
-    {result && <VehicleCard details={result.details} />}
+    {favorites.error && <Feedback message={favorites.error} onRetry={favorites.retry} />}
+    {result && <VehicleCard details={result.details}><ActionButton disabled={!favorites.ready || favorites.busy} label={favorites.favorites.some(item => item.id === vehicleId(result.query)) ? 'Atualizar favorito' : 'Salvar favorito'} onPress={() => { void favorites.add({ ...result, id: vehicleId(result.query), savedAt: new Date().toISOString() }); }} /></VehicleCard>}
   </Screen>;
 }
 function ResourceFeedback({ name, enabled, data }: { name: string; enabled: boolean; data: ReturnType<typeof useOptions> }) {
