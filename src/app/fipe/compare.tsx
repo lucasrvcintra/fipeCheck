@@ -40,7 +40,7 @@ export default function Compare() {
     <Screen
       tabs
       title="Comparativo"
-      subtitle="Compare compra, financiamento, IPVA e custo de uso de dois carros salvos."
+      subtitle="Compare compra, financiamento, IPVA, custo de uso e aplicação do dinheiro de dois carros salvos."
     >
       {error && <Feedback message={error} onRetry={retry} />}
       {!ready && !error && <Feedback loading message="Lendo favoritos..." />}

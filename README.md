@@ -78,7 +78,7 @@ total da aquisição simulada = entrada + parcela × n
 
 Com taxa zero, a parcela é `PV / n`. Com entrada integral, parcela e juros são zero. O cálculo utiliza funções matemáticas equivalentes para manter estabilidade com taxas muito pequenas. O arredondamento é feito na apresentação.
 
-SELIC e CDI são consultados somente ao abrir o financiamento. São referências informativas e não preenchem a taxa do usuário. O app informa quando as obteve; a resposta da BrasilAPI não fornece a data-base. Loading ou erro dessas referências não bloqueiam a simulação manual.
+SELIC e CDI são consultados ao abrir uma comparação, compartilhados entre financiamento e aplicação. No financiamento, são referências informativas; na aplicação, participam do cálculo do rendimento bruto. O app informa quando as obteve; a resposta da BrasilAPI não fornece a data-base. Loading ou erro dessas referências não bloqueiam a simulação manual.
 
 A simulação não inclui IOF, tarifas ou outros encargos e não representa o CET de uma proposta bancária. [Informações do Banco Central sobre CET](https://www.bcb.gov.br/meubc/faqs/p/cuidados-na-hora-de-contratar-uma-operacao-de-credito).
 
@@ -109,6 +109,19 @@ IPVA anual estimado = preço FIPE salvo × alíquota percentual ÷ 100
 - [Regra geral e alíquotas — SEF/MG](https://www.fazenda.mg.gov.br/empresas/legislacao_tributaria/ipva/duvidas_frequentes/index.html)
 - [Base de cálculo — SEF/MG](https://www.fazenda.mg.gov.br/empresas/impostos/ipva/calculo.html)
 
+### Aplicar em vez de comprar
+
+No passo 5 do Comparativo, escolha SELIC ou CDI e informe o prazo da aplicação em meses inteiros positivos (inicialmente 12). O capital de cada cenário corresponde ao preço FIPE salvo do respectivo carro. A taxa anual usada é a retornada pela BrasilAPI em `/taxas/v1`, sem valor de juros fixo no código.
+
+```text
+saldo final = capital × (1 + taxa anual / 100)^(meses / 12)
+rendimento bruto = saldo final − capital
+```
+
+A interface mostra capital inicial, rendimento bruto e saldo final bruto para cada carro. Assume taxa anual efetiva constante, capitalização composta, ausência de aportes ou retiradas e não desconta impostos, tarifas ou inflação. Não representa um produto financeiro específico, uma previsão ou garantia de rendimento. Não inclui parcelas nem estima o preço futuro do carro: são cenários separados de não comprar e manter o dinheiro aplicado.
+
+A resposta da API não informa a data-base das taxas; o app identifica o momento em que as recebeu. Se a consulta falhar, a projeção fica indisponível com opção de tentar novamente, enquanto os demais cálculos locais continuam disponíveis. Taxa e prazo da aplicação são independentes dos campos do financiamento.
+
 ## Fontes externas
 
 [Documentação da BrasilAPI](https://brasilapi.com.br/docs#tag/FIPE), base `https://brasilapi.com.br/api`:
@@ -119,7 +132,7 @@ IPVA anual estimado = preço FIPE salvo × alíquota percentual ÷ 100
 | `/fipe/veiculos/v1/{tipo}/{marca}` | Modelos da marca. |
 | `/fipe/anos/v1/{tipo}/{marca}/{modelo}` | Anos e combustíveis. |
 | `/fipe/detalhes/v1/{tipo}/{marca}/{modelo}/{ano}` | Preço e detalhes. |
-| `/taxas/v1` | SELIC/CDI de referência. |
+| `/taxas/v1` | SELIC/CDI para referência e cálculo da aplicação hipotética. |
 
 Não é necessária chave de API. Consulta FIPE e referências econômicas precisam de conexão; favoritos e cálculos locais funcionam offline.
 

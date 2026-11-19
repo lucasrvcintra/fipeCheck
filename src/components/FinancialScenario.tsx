@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Linking, Switch, View } from "react-native";
 import { RateReference } from "./RateReference";
+import { InvestmentScenario } from "./InvestmentScenario";
+import { useRates } from "@/hooks/useRates";
 import { MG_IPVA } from "@/data/ipva";
 import {
   estimatedIpva,
@@ -31,6 +33,7 @@ export function FinancialScenario({
   nameB: string;
 }) {
   const c = usePalette();
+  const rates = useRates();
   const [finance, setFinance] = useState({
     downA: "0",
     downB: "0",
@@ -108,7 +111,7 @@ export function FinancialScenario({
       >
         {enabled && (
           <>
-            <RateReference />
+            <RateReference rates={rates} />
             <FieldPair>
               <NumberField
                 label="Taxa anual"
@@ -253,6 +256,13 @@ export function FinancialScenario({
               ? "Conclua o financiamento (passo 2) ou desative-o para calcular o custo mensal total."
               : undefined
         }
+      />
+      <InvestmentScenario
+        priceA={priceA}
+        priceB={priceB}
+        nameA={nameA}
+        nameB={nameB}
+        rates={rates}
       />
       <Card tone="soft">
         <ThemedText variant="caption" tone="muted">

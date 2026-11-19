@@ -103,3 +103,30 @@ export function financing(
     throw new Error("Os valores informados excedem o limite do financiamento.");
   return { principal, monthlyRate, installment, interest, total };
 }
+
+export function investmentGrowth(
+  principal: number,
+  annualPercent: number,
+  months: number,
+) {
+  if (
+    ![principal, annualPercent, months].every(Number.isFinite) ||
+    principal < 0 ||
+    annualPercent < 0 ||
+    !Number.isInteger(months) ||
+    months <= 0
+  ) {
+    throw new Error(
+      "Informe capital e taxa não negativos e prazo inteiro positivo em meses.",
+    );
+  }
+  // Taxa anual efetiva constante; períodos fracionários de ano equivalentes.
+  const grossYield =
+    principal === 0
+      ? 0
+      : principal * Math.expm1(Math.log1p(annualPercent / 100) * (months / 12));
+  const total = principal + grossYield;
+  if (!Number.isFinite(grossYield) || !Number.isFinite(total))
+    throw new Error("Os valores informados excedem o limite da projeção.");
+  return { principal, grossYield, total };
+}
