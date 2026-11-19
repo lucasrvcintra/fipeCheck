@@ -1,4 +1,4 @@
-import { RunningCostForm } from '@/components/RunningCostForm';
+import { FinancialScenario } from '@/components/FinancialScenario';
 import { useState } from 'react';
 import { Screen } from '@/components/Screen';
 import { OptionPicker } from '@/components/OptionPicker';
@@ -43,6 +43,6 @@ function Comparison({ a, b }: { a: Favorite; b: Favorite }) {
     <CompareRow label="Data da consulta" a={a.details.dataConsulta} b={b.details.dataConsulta} />
     {a.details.mesReferencia.trim() !== b.details.mesReferencia.trim() && <Feedback message="As referências FIPE são diferentes. Considere consultar novamente antes de comparar." />}
     <ThemedText>{comparison.difference === 0 ? 'Os preços de compra são iguais.' : `B custa ${money(Math.abs(comparison.difference))} ${comparison.difference > 0 ? 'a mais' : 'a menos'} que A.${comparison.percent === null ? ' Percentual indisponível.' : ` Diferença de ${Math.abs(comparison.percent).toFixed(2)}% sobre A.`}`}</ThemedText>
-    <RunningCostForm />
+    <FinancialScenario priceA={priceA} priceB={priceB} />
   </>;
 }

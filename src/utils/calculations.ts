@@ -20,3 +20,7 @@ export function runningCosts(s: UseScenario) {
   if (!Number.isFinite(monthly)) throw new Error('Os valores informados excedem o limite do cálculo.');
   return { fuel, monthly, yearly: monthly * 12, perKm: s.km > 0 ? monthly / s.km : null };
 }
+export function estimatedIpva(price: number, percent: number) {
+  if (!Number.isFinite(price) || price < 0 || !Number.isFinite(percent) || percent < 0 || percent > 100) throw new Error('Preço inválido ou alíquota fora do intervalo de 0 a 100%.');
+  return price * (percent / 100);
+}
