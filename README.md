@@ -4,6 +4,8 @@ Projeto da disciplina de Desenvolvimento em Dispositivos Móveis do curso de Sis
 
 O fipeCheck consulta preços FIPE, salva veículos favoritos e compara o custo de compra e uso de dois carros conforme o cenário informado pelo usuário.
 
+O tema do projeto foi aprovado pelo professor.
+
 ## Integrantes
 
 - [Lucas Cintra](https://github.com/lucasrvcintra)
@@ -11,7 +13,7 @@ O fipeCheck consulta preços FIPE, salva veículos favoritos e compara o custo d
 
 ## Situação atual
 
-A entrega principal está implementada: cinco telas, consulta FIPE, favoritos persistentes, comparação de preços, custo de uso, IPVA estimado, financiamento e aplicação hipotética do valor FIPE. A validação manual em dispositivo Android ainda está pendente.
+A entrega principal está implementada: cinco telas, consulta FIPE, favoritos persistentes, comparação de preços, custo de uso, IPVA estimado, financiamento e aplicação hipotética do valor FIPE. O funcionamento do aplicativo foi testado manualmente, conforme confirmação dos integrantes em 19/11/2026.
 
 O catálogo de consumo do Inmetro fica como evolução futura.
 
@@ -31,7 +33,7 @@ A interface acompanha o tema claro/escuro do sistema. Há `SafeAreaProvider` na 
 
 ## Como executar
 
-Utilize Node.js 22.18 ou superior e npm. Os testes utilizam a execução nativa de TypeScript do Node.
+Utilize Node.js 22.18 ou superior e npm.
 
 ```bash
 npm install
@@ -172,7 +174,7 @@ npx expo export --platform android
 
 Foram verificados lint, TypeScript, diagnóstico Expo com 20/20 verificações e geração de bundle Android. Os cenários de cálculo foram verificados durante o desenvolvimento; os arquivos de testes foram removidos desta versão, assim como o comando `npm test`. A correção da imunidade de IPVA foi conferida com sete cenários de regressão executados em arquivo temporário. Também foi percorrido o fluxo real da BrasilAPI para um Corolla: marcas, modelos, anos e detalhes retornaram HTTP 200.
 
-Ainda é necessário validar em aparelho/emulador: navegação, tema claro/escuro, teclado, nomes longos, áreas seguras, comportamento sem conexão, reinício para verificar persistência e falhas de armazenamento. O bundle exportado não equivale a um APK instalado nem substitui essa validação.
+A validação manual do funcionamento foi realizada pelos integrantes, que confirmaram em 19/11/2026 que o aplicativo está funcionando. Essa confirmação complementa as verificações técnicas descritas acima.
 
 ## Histórico por etapas
 
@@ -196,7 +198,9 @@ Ainda é necessário validar em aparelho/emulador: navegação, tema claro/escur
 | 15 | Documentação e roteiro da entrega principal | `c4579b9` |
 | 16 | Atualização de layout e usabilidade | `75ca7bb` |
 | 17 | Aplicação hipotética do valor FIPE com SELIC/CDI | `90c82c8` |
-| 18 | Correções finais: inversão A/B, botões, resumo e IPVA por idade | Este commit |
+| 18 | Correções finais: inversão A/B, botões, resumo e IPVA por idade | `db45885` |
+| 19 | Revisão do README | `3796689` |
+| 20 | Declaração de uso de IA e validação manual | Este commit |
 
 ## Roteiro de apresentação
 
@@ -222,6 +226,6 @@ Esse item não faz parte da entrega principal implementada. A versão atual não
 | Ferramenta | Modelo | Finalidade |
 | --- | --- | --- |
 | Codex | GPT-6 | Escolha do nome fipeCheck, elaboração e revisão do plano, redação deste README, consulta à documentação, execução de verificações (lint, TypeScript, Expo Doctor) e geração de código das funcionalidades e dos testes. |
-| Claude Code | Claude Opus 5.5 | Conferência do projeto em relação aos requisitos do enunciado e revisão desta seção do README. |
+| Claude Code | Claude Opus 5.5 | Conferência do projeto em relação aos requisitos do enunciado, revisão do README e desta seção, explicação de um aviso de navegação do Expo Router e de uma falha de rede no teste em Android, e explicação de conceitos (hooks, Context, `fetch`, navegação) para a preparação da apresentação. |
 
-A geração de código foi orientada pelos padrões e referências das entregas anteriores da disciplina (estrutura de pastas, Expo Router, `fetch`, AsyncStorage, componentes e estilização com `StyleSheet`), e não feita de forma livre. Todo o código foi revisado e ajustado pelos integrantes, que se responsabilizam por ele.
+A criação do projeto, o reset do template, a proposta do app com a descrição das telas e as instruções iniciais foram feitos pelos integrantes, sem uso de agente. Só depois dessa etapa o agente passou a ser usado. Por decisão da dupla, ele recebeu a instrução de ler as entregas anteriores de Lucas Cintra na disciplina ([currencyConverter](https://github.com/lucasrvcintra/currencyConverter), [newsApp](https://github.com/lucasrvcintra/newsApp), [visitCard](https://github.com/lucasrvcintra/visitCard), [trafficLight](https://github.com/lucasrvcintra/trafficLight) e [ReactNative-Uniacademia](https://github.com/lucasrvcintra/ReactNative-Uniacademia)), principalmente o currencyConverter, e replicar neste projeto a estrutura de rotas (Drawer com Tabs aninhadas), os componentes `ThemedText` e `ThemedView`, o `FavoritesContext` com AsyncStorage, a camada de serviços com `fetch` e a organização de pastas. As funcionalidades específicas do fipeCheck foram geradas pelo agente a partir das nossas instruções, seguindo esses mesmos padrões: o comparativo, os cálculos de custo, IPVA, financiamento e aplicação, e os hooks `useOptions`, `useStoredState` e `useRates`. Todo o código foi revisado e ajustado pelos integrantes, que se responsabilizam por ele.
