@@ -24,3 +24,13 @@ export function estimatedIpva(price: number, percent: number) {
   if (!Number.isFinite(price) || price < 0 || !Number.isFinite(percent) || percent < 0 || percent > 100) throw new Error('Preço inválido ou alíquota fora do intervalo de 0 a 100%.');
   return price * (percent / 100);
 }
+export function financing(price: number, downPayment: number, annualPercent: number, months: number) {
+  if (![price, downPayment, annualPercent, months].every(Number.isFinite) || price < 0 || downPayment < 0 || downPayment > price || annualPercent < 0 || !Number.isInteger(months) || months <= 0) throw new Error('Confira entrada (entre zero e o preço), taxa não negativa e prazo inteiro positivo.');
+  const principal = price - downPayment;
+  const monthlyRate = Math.expm1(Math.log1p(annualPercent / 100) / 12);
+  const installment = principal === 0 ? 0 : monthlyRate === 0 ? principal / months : principal * monthlyRate / -Math.expm1(-months * Math.log1p(monthlyRate));
+  const interest = Math.max(0, installment * months - principal);
+  const total = downPayment + installment * months;
+  if (![installment, interest, total].every(Number.isFinite)) throw new Error('Os valores informados excedem o limite do financiamento.');
+  return { principal, monthlyRate, installment, interest, total };
+}
