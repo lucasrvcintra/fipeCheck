@@ -9,3 +9,10 @@ export async function getOptions(path: string, signal?: AbortSignal): Promise<Op
     return { label, value: String(item.valor) };
   });
 }
+
+export async function getDetails(query: import('@/types/fipe').VehicleQuery, signal?: AbortSignal): Promise<import('@/types/fipe').VehicleDetails> {
+  const path = [query.type, query.brand, query.model, query.year].map(encodeURIComponent).join('/');
+  const data = await request(`/fipe/detalhes/v1/${path}`, signal);
+  if (!data || typeof data !== 'object' || !('valor' in data) || typeof data.valor !== 'string' || !('codigoFipe' in data) || !('modelo' in data) || !('mesReferencia' in data)) throw new Error('Detalhes inválidos recebidos da BrasilAPI.');
+  return data as import('@/types/fipe').VehicleDetails;
+}
