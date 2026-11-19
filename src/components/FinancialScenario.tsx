@@ -4,12 +4,7 @@ import { RateReference } from "./RateReference";
 import { InvestmentScenario } from "./InvestmentScenario";
 import { useRates } from "@/hooks/useRates";
 import { MG_IPVA } from "@/data/ipva";
-import {
-  estimatedIpva,
-  nonNegative,
-  money,
-  financing,
-} from "@/utils/calculations";
+import { carIpva, nonNegative, money, financing } from "@/utils/calculations";
 import { Segmented } from "./OptionPicker";
 import { NumberField, FieldPair } from "./NumberField";
 import { CompareRow, CompareTable } from "./CompareRow";
@@ -22,30 +17,42 @@ import { Card } from "./Card";
 import { usePalette } from "@/constants/theme";
 
 export function FinancialScenario({
+  idA,
+  idB,
   priceA,
   priceB,
+  modelYearA,
+  modelYearB,
   nameA,
   nameB,
 }: {
+  idA: string;
+  idB: string;
   priceA: number;
   priceB: number;
+  modelYearA: number;
+  modelYearB: number;
   nameA: string;
   nameB: string;
 }) {
   const c = usePalette();
   const rates = useRates();
   const [finance, setFinance] = useState({
-    downA: "0",
-    downB: "0",
     rate: "",
     months: "",
   });
+  // Entradas pertencem ao veículo, independentemente da coluna A/B.
+  const [downPayments, setDownPayments] = useState<Record<string, string>>({});
+  const downA = downPayments[idA] ?? "0";
+  const downB = downPayments[idB] ?? "0";
   const [enabled, setEnabled] = useState(false);
   const set = (key: keyof typeof finance) => (value: string) =>
     setFinance((s) => ({ ...s, [key]: value }));
 
   // O cálculo é automático assim que todos os campos estão preenchidos.
-  const complete = Object.values(finance).every((value) => value.trim() !== "");
+  const complete = [downA, downB, ...Object.values(finance)].every(
+    (value) => value.trim() !== "",
+  );
   let loan:
     | { a: ReturnType<typeof financing>; b: ReturnType<typeof financing> }
     | undefined;
@@ -55,18 +62,8 @@ export function FinancialScenario({
       const rate = nonNegative(finance.rate, "Taxa anual");
       const months = nonNegative(finance.months, "Prazo");
       loan = {
-        a: financing(
-          priceA,
-          nonNegative(finance.downA, "Entrada A"),
-          rate,
-          months,
-        ),
-        b: financing(
-          priceB,
-          nonNegative(finance.downB, "Entrada B"),
-          rate,
-          months,
-        ),
+        a: financing(priceA, nonNegative(downA, "Entrada A"), rate, months),
+        b: financing(priceB, nonNegative(downB, "Entrada B"), rate, months),
       };
     } catch (error) {
       loanError = (error as Error).message;
@@ -75,18 +72,42 @@ export function FinancialScenario({
 
   const [region, setRegion] = useState("MG");
   const [tax, setTax] = useState(String(MG_IPVA.percent));
-  let annualA: number | undefined,
-    annualB: number | undefined,
-    taxError: string | undefined;
+  // A API traz ano-modelo, não fabricação. A estimativa pode ser corrigida por veículo.
+  const [fabricationYears, setFabricationYears] = useState<
+    Record<string, string>
+  >({});
+  const yearA =
+    fabricationYears[idA] ??
+    String(
+      modelYearA === 32000 ? MG_IPVA.year : Math.min(modelYearA, MG_IPVA.year),
+    );
+  const yearB =
+    fabricationYears[idB] ??
+    String(
+      modelYearB === 32000 ? MG_IPVA.year : Math.min(modelYearB, MG_IPVA.year),
+    );
+  let ipvaA: ReturnType<typeof carIpva> | undefined;
+  let ipvaB: ReturnType<typeof carIpva> | undefined;
+  let taxError: string | undefined;
   try {
     const percent = nonNegative(tax, "Alíquota");
-    annualA = estimatedIpva(priceA, percent);
-    annualB = estimatedIpva(priceB, percent);
+    ipvaA = carIpva(
+      priceA,
+      percent,
+      nonNegative(yearA, "Fabricação A"),
+      MG_IPVA.year,
+    );
+    ipvaB = carIpva(
+      priceB,
+      percent,
+      nonNegative(yearB, "Fabricação B"),
+      MG_IPVA.year,
+    );
   } catch (error) {
-    taxError = tax.trim()
-      ? (error as Error).message
-      : "Informe a alíquota de IPVA.";
+    taxError = (error as Error).message;
   }
+  const annualA = ipvaA?.annual;
+  const annualB = ipvaB?.annual;
 
   return (
     <>
@@ -133,14 +154,18 @@ export function FinancialScenario({
               <NumberField
                 label="Entrada A"
                 prefix="R$"
-                value={finance.downA}
-                onChange={set("downA")}
+                value={downA}
+                onChange={(value) =>
+                  setDownPayments((previous) => ({ ...previous, [idA]: value }))
+                }
               />
               <NumberField
                 label="Entrada B"
                 prefix="R$"
-                value={finance.downB}
-                onChange={set("downB")}
+                value={downB}
+                onChange={(value) =>
+                  setDownPayments((previous) => ({ ...previous, [idB]: value }))
+                }
               />
             </FieldPair>
             {!complete && (
@@ -184,7 +209,7 @@ export function FinancialScenario({
       <Section
         step="Passo 3"
         title="IPVA estimado"
-        description="Estimativa sobre a FIPE salva, sem isenções, descontos ou proporcionalidade. A base oficial da Sefaz pode ser diferente."
+        description={`Exercício ${MG_IPVA.year}. Estimativa sobre a FIPE salva, com imunidade por idade para automóveis de passageiros. Sem outras isenções, descontos ou proporcionalidade.`}
       >
         <Segmented
           label="Cenário tributário"
@@ -210,9 +235,46 @@ export function FinancialScenario({
               : "Alíquota informada por você."
           }
         />
+        <ThemedText variant="bodySm" tone="muted">
+          A FIPE informa o ano-modelo. Usamos esse ano como estimativa inicial
+          da fabricação; confirme no documento do veículo e ajuste abaixo. Para
+          zero km ou modelo futuro, o valor inicial é o ano do exercício. A
+          imunidade considera 20 anos ou mais de fabricação.
+        </ThemedText>
+        <FieldPair>
+          <NumberField
+            label="Fabricação A"
+            integer
+            value={yearA}
+            onChange={(value) =>
+              setFabricationYears((previous) => ({ ...previous, [idA]: value }))
+            }
+          />
+          <NumberField
+            label="Fabricação B"
+            integer
+            value={yearB}
+            onChange={(value) =>
+              setFabricationYears((previous) => ({ ...previous, [idB]: value }))
+            }
+          />
+        </FieldPair>
         {taxError && <Feedback tone="error" message={taxError} />}
         {annualA !== undefined && annualB !== undefined && (
           <CompareTable nameA={nameA} nameB={nameB}>
+            <CompareRow
+              label="Situação por idade (estimada)"
+              a={
+                ipvaA?.exemptByAge
+                  ? `Imune: ${ipvaA.age} anos`
+                  : "Sem imunidade por idade"
+              }
+              b={
+                ipvaB?.exemptByAge
+                  ? `Imune: ${ipvaB.age} anos`
+                  : "Sem imunidade por idade"
+              }
+            />
             <CompareRow
               label="IPVA por ano"
               a={money(annualA)}
@@ -227,6 +289,15 @@ export function FinancialScenario({
             />
           </CompareTable>
         )}
+        <ActionButton
+          compact
+          variant="ghost"
+          icon="open-outline"
+          label="Regra dos 20 anos (EC 137/2025)"
+          onPress={() => {
+            void Linking.openURL(MG_IPVA.ageExemptionSource);
+          }}
+        />
         {region === "MG" && (
           <View style={{ alignSelf: "flex-start" }}>
             <ActionButton
@@ -243,6 +314,8 @@ export function FinancialScenario({
       </Section>
 
       <RunningCostForm
+        idA={idA}
+        idB={idB}
         nameA={nameA}
         nameB={nameB}
         annualTaxA={annualA ?? 0}
@@ -251,7 +324,7 @@ export function FinancialScenario({
         installmentB={loan?.b.installment}
         blocked={
           taxError
-            ? "Corrija a alíquota de IPVA para calcular o custo de uso."
+            ? "Confira a alíquota e os anos de fabricação para calcular o custo de uso."
             : enabled && !loan
               ? "Conclua o financiamento (passo 2) ou desative-o para calcular o custo mensal total."
               : undefined

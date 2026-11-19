@@ -10,6 +10,7 @@ import { useStoredState } from "@/hooks/useStoredState";
 import { money, nonNegative, runningCosts } from "@/utils/calculations";
 import { space } from "@/constants/theme";
 
+const INITIAL_CAR = { consumption: "", maintenance: "0", insurance: "0" };
 const INITIAL = { km: "1000", fuelPrice: "6" };
 function validPreferences(data: unknown): data is typeof INITIAL {
   if (
@@ -32,6 +33,8 @@ function validPreferences(data: unknown): data is typeof INITIAL {
 }
 
 export function RunningCostForm({
+  idA,
+  idB,
   nameA,
   nameB,
   annualTaxA = 0,
@@ -40,6 +43,8 @@ export function RunningCostForm({
   installmentB = 0,
   blocked,
 }: {
+  idA: string;
+  idB: string;
   nameA: string;
   nameB: string;
   blocked?: string;
@@ -54,20 +59,21 @@ export function RunningCostForm({
     validPreferences,
   );
   const [shared, setShared] = useState<{ km?: string; fuelPrice?: string }>({});
-  const [fields, setFields] = useState({
-    consumptionA: "",
-    consumptionB: "",
-    maintenanceA: "0",
-    maintenanceB: "0",
-    insuranceA: "0",
-    insuranceB: "0",
-  });
+  // Consumo e despesas acompanham o veículo quando as colunas são invertidas.
+  const [carFields, setCarFields] = useState<
+    Record<string, typeof INITIAL_CAR>
+  >({});
+  const fieldsA = carFields[idA] ?? INITIAL_CAR;
+  const fieldsB = carFields[idB] ?? INITIAL_CAR;
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const km = shared.km ?? preferences.value.km;
   const fuelPrice = shared.fuelPrice ?? preferences.value.fuelPrice;
-  const set = (key: keyof typeof fields) => (value: string) =>
-    setFields((s) => ({ ...s, [key]: value }));
+  const set = (id: string, key: keyof typeof INITIAL_CAR) => (value: string) =>
+    setCarFields((previous) => ({
+      ...previous,
+      [id]: { ...(previous[id] ?? INITIAL_CAR), [key]: value },
+    }));
   const setShare = (key: "km" | "fuelPrice") => (value: string) => {
     setShared((s) => ({ ...s, [key]: value }));
     setSaved(false);
@@ -81,25 +87,28 @@ export function RunningCostForm({
     };
     const a = runningCosts({
       ...common,
-      consumption: nonNegative(fields.consumptionA, "Consumo A"),
-      maintenance: nonNegative(fields.maintenanceA, "Manutenção A"),
-      insurance: nonNegative(fields.insuranceA, "Seguro A"),
+      consumption: nonNegative(fieldsA.consumption, "Consumo A"),
+      maintenance: nonNegative(fieldsA.maintenance, "Manutenção A"),
+      insurance: nonNegative(fieldsA.insurance, "Seguro A"),
       annualTax: annualTaxA,
     });
     const b = runningCosts({
       ...common,
-      consumption: nonNegative(fields.consumptionB, "Consumo B"),
-      maintenance: nonNegative(fields.maintenanceB, "Manutenção B"),
-      insurance: nonNegative(fields.insuranceB, "Seguro B"),
+      consumption: nonNegative(fieldsB.consumption, "Consumo B"),
+      maintenance: nonNegative(fieldsB.maintenance, "Manutenção B"),
+      insurance: nonNegative(fieldsB.insurance, "Seguro B"),
       annualTax: annualTaxB,
     });
     return { a, b };
   }
 
   // Calcula automaticamente quando todos os campos estão preenchidos.
-  const complete = [km, fuelPrice, ...Object.values(fields)].every(
-    (value) => value.trim() !== "",
-  );
+  const complete = [
+    km,
+    fuelPrice,
+    ...Object.values(fieldsA),
+    ...Object.values(fieldsB),
+  ].every((value) => value.trim() !== "");
   let result: ReturnType<typeof calculate> | undefined,
     error: string | undefined;
   if (complete && !blocked) {
@@ -172,43 +181,43 @@ export function RunningCostForm({
           label="Consumo A"
           suffix="km/l"
           placeholder="ex. 12"
-          value={fields.consumptionA}
-          onChange={set("consumptionA")}
+          value={fieldsA.consumption}
+          onChange={set(idA, "consumption")}
         />
         <NumberField
           label="Consumo B"
           suffix="km/l"
           placeholder="ex. 10"
-          value={fields.consumptionB}
-          onChange={set("consumptionB")}
+          value={fieldsB.consumption}
+          onChange={set(idB, "consumption")}
         />
       </FieldPair>
       <FieldPair>
         <NumberField
           label="Manutenção A /mês"
           prefix="R$"
-          value={fields.maintenanceA}
-          onChange={set("maintenanceA")}
+          value={fieldsA.maintenance}
+          onChange={set(idA, "maintenance")}
         />
         <NumberField
           label="Manutenção B /mês"
           prefix="R$"
-          value={fields.maintenanceB}
-          onChange={set("maintenanceB")}
+          value={fieldsB.maintenance}
+          onChange={set(idB, "maintenance")}
         />
       </FieldPair>
       <FieldPair>
         <NumberField
           label="Seguro A /mês"
           prefix="R$"
-          value={fields.insuranceA}
-          onChange={set("insuranceA")}
+          value={fieldsA.insurance}
+          onChange={set(idA, "insurance")}
         />
         <NumberField
           label="Seguro B /mês"
           prefix="R$"
-          value={fields.insuranceB}
-          onChange={set("insuranceB")}
+          value={fieldsB.insurance}
+          onChange={set(idB, "insurance")}
         />
       </FieldPair>
       {blocked && <Feedback tone="tip" message={blocked} />}
@@ -232,7 +241,7 @@ export function RunningCostForm({
             caption={
               totalA === totalB
                 ? "Os dois carros custam o mesmo por mês neste cenário."
-                : `O carro B custa ${money(Math.abs(totalB - totalA))} ${totalB > totalA ? "a mais" : "a menos"} por mês que o A (${money(Math.abs(totalB - totalA) * 12)} por ano).`
+                : `O carro B custa ${money(Math.abs(totalB - totalA))} ${totalB > totalA ? "a mais" : "a menos"} por mês que o A${financed ? ", enquanto durarem as parcelas." : ` (${money(Math.abs(totalB - totalA) * 12)} por ano).`}`
             }
           />
           <CompareTable nameA={nameA} nameB={nameB}>

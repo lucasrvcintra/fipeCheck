@@ -70,6 +70,30 @@ export function estimatedIpva(price: number, percent: number) {
     );
   return price * (percent / 100);
 }
+/** Imunidade por idade para automóveis de passageiros: EC 137/2025. */
+export function carIpva(
+  price: number,
+  percent: number,
+  fabricationYear: number,
+  exerciseYear: number,
+) {
+  if (
+    !Number.isInteger(exerciseYear) ||
+    exerciseYear < 1 ||
+    !Number.isInteger(fabricationYear) ||
+    fabricationYear < 1 ||
+    fabricationYear > exerciseYear
+  ) {
+    throw new Error(
+      "Informe um ano de fabricação inteiro e válido, até o exercício do IPVA.",
+    );
+  }
+  const base = estimatedIpva(price, percent);
+  const age = exerciseYear - fabricationYear;
+  const exemptByAge = exerciseYear >= 2026 && age >= 20;
+  return { annual: exemptByAge ? 0 : base, age, exemptByAge };
+}
+
 export function financing(
   price: number,
   downPayment: number,

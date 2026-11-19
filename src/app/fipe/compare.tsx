@@ -121,7 +121,9 @@ export default function Compare() {
           </Card>
         )
       )}
-      {a && b && <Comparison key={`${a.id}:${b.id}`} a={a} b={b} />}
+      {a && b && (
+        <Comparison key={JSON.stringify([a.id, b.id].sort())} a={a} b={b} />
+      )}
     </Screen>
   );
 }
@@ -208,6 +210,10 @@ function Comparison({ a, b }: { a: Favorite; b: Favorite }) {
         </CompareTable>
       </Section>
       <FinancialScenario
+        idA={a.id}
+        idB={b.id}
+        modelYearA={a.details.anoModelo}
+        modelYearB={b.details.anoModelo}
         priceA={priceA}
         priceB={priceB}
         nameA={nameA}

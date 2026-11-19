@@ -4,5 +4,7 @@ export const MG_IPVA = {
   category: "Automóvel particular — regra geral de MG",
   source:
     "https://www.fazenda.mg.gov.br/empresas/legislacao_tributaria/ipva/duvidas_frequentes/index.html",
-  checkedAt: "2026-11-18",
+  ageExemptionSource:
+    "https://legis.senado.leg.br/norma/41822113/publicacao/41822284",
+  checkedAt: "2026-11-19",
 };

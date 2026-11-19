@@ -95,6 +95,8 @@ export function ActionButton({
 }
 const styles = StyleSheet.create({
   button: {
+    maxWidth: "100%",
+    minWidth: 0,
     borderRadius: radius.control,
     borderWidth: 1,
     paddingVertical: 14,
@@ -112,9 +114,14 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: space.sm,
+    maxWidth: "100%",
+    flexShrink: 1,
   },
   label: {
+    flexShrink: 1,
+    minWidth: 0,
     fontFamily: fonts.bold,
     fontSize: 14,
     lineHeight: 20,

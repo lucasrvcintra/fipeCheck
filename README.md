@@ -11,9 +11,9 @@ O fipeCheck consulta preços FIPE, salva veículos favoritos e compara o custo d
 
 ## Situação atual
 
-A entrega principal está implementada: cinco telas, consulta FIPE, favoritos persistentes, comparação de preços, custo de uso, IPVA estimado e financiamento. A validação manual em dispositivo Android ainda está pendente.
+A entrega principal está implementada: cinco telas, consulta FIPE, favoritos persistentes, comparação de preços, custo de uso, IPVA estimado, financiamento e aplicação hipotética do valor FIPE. A validação manual em dispositivo Android ainda está pendente.
 
-As integrações de segurança com Latin NCAP e NHTSA e o catálogo de consumo do Inmetro ficam como evolução futura. Não são exibidas notas ou dados de segurança nesta versão.
+O catálogo de consumo do Inmetro fica como evolução futura.
 
 ## Telas e navegação
 
@@ -23,7 +23,7 @@ As integrações de segurança com Latin NCAP e NHTSA e o catálogo de consumo d
 | Sobre | Integrantes, objetivo e link da fonte dos dados. |
 | Consulta FIPE | Formulário único com tipo, marca, modelo e ano/combustível. O preço aparece na mesma tela e pode ser salvo ou atualizado nos favoritos. |
 | Favoritos | Lista dos resultados salvos, disponível offline, com opção de remoção. |
-| Comparativo | Seleção de dois carros favoritos distintos; diferença de preço, custo de uso, IPVA e financiamento. |
+| Comparativo | Seleção de dois carros favoritos distintos; diferença de preço, custo de uso, IPVA, financiamento e aplicação hipotética. |
 
 O Drawer contém Início, FIPE e Sobre. Dentro de FIPE, as Tabs contêm Consulta, Favoritos e Comparativo. Consulta e favoritos aceitam carros, motos e caminhões; o comparativo aceita somente carros.
 
@@ -46,13 +46,13 @@ npm run android
 
 ## Consulta e armazenamento
 
-O tipo selecionado carrega as marcas; a marca carrega os modelos; e o modelo carrega as opções de ano/combustível. O preço é buscado somente ao pressionar **Consultar preço**.
+O tipo selecionado carrega as marcas; a marca carrega os modelos; e o modelo carrega as opções de ano/combustível. Ano e combustível ficam em um único campo, como a FIPE os fornece; quando o modelo tem apenas uma opção, ela é selecionada automaticamente. O preço é buscado somente ao pressionar **Consultar preço**.
 
 Alterar uma seleção limpa os campos dependentes e o resultado anterior. As requisições possuem loading, erro, nova tentativa e timeout de 20 segundos. Respostas canceladas não substituem as seleções atuais.
 
 Favoritos guardam os identificadores da consulta, os dados FIPE e a data de salvamento, usando a chave `fipecheck_favorites_v1`. Consultar e salvar novamente a mesma combinação atualiza o registro. Quando a API não fornece `dataConsulta`, o app registra o horário de recebimento da resposta.
 
-O comparativo usa os preços salvos e avisa sobre meses de referência diferentes. Os preços não são atualizados automaticamente. A opção **Lembrar km e preço do litro** grava essas duas preferências em `fipecheck_usage_v1`. Os demais campos de simulação ficam na sessão; trocar a dupla de carros reinicia o cenário.
+O comparativo usa os preços salvos e avisa sobre meses de referência diferentes. Os preços não são atualizados automaticamente. A opção **Lembrar km e preço do litro** grava essas duas preferências em `fipecheck_usage_v1`. Os demais campos de simulação ficam na sessão; trocar a dupla de carros reinicia o cenário. Inverter A e B preserva as premissas compartilhadas e mantém entrada, consumo e despesas associados ao respectivo veículo.
 
 A leitura inicial do armazenamento precisa terminar antes de salvar. Falhas são apresentadas na interface; em caso de erro de gravação, o estado anterior é mantido.
 
@@ -64,7 +64,7 @@ Os valores monetários são apresentados em reais. Nos campos numéricos, prefir
 
 O comparativo mostra a diferença de B em relação a A, em reais e percentual sobre A. Com preço-base zero, o percentual fica indisponível.
 
-O financiamento começa desativado, representando compra à vista. Ao ativá-lo pelo interruptor, informe entrada por carro (inicialmente zero), prazo inteiro positivo em meses e taxa efetiva anual compartilhada. Os cálculos são atualizados automaticamente quando os campos estão completos. A entrada deve estar entre zero e o preço do carro; a taxa não pode ser negativa.
+O financiamento começa desativado, representando compra à vista. Ao ativá-lo pelo interruptor, informe entrada por carro (inicia em zero), prazo inteiro positivo em meses e taxa efetiva anual compartilhada. Os resultados são recalculados automaticamente quando todos os campos estão preenchidos, assim como o custo de uso. A entrada deve estar entre zero e o preço do carro; a taxa não pode ser negativa.
 
 Com `taxa = percentual anual / 100`:
 
@@ -78,7 +78,7 @@ total da aquisição simulada = entrada + parcela × n
 
 Com taxa zero, a parcela é `PV / n`. Com entrada integral, parcela e juros são zero. O cálculo utiliza funções matemáticas equivalentes para manter estabilidade com taxas muito pequenas. O arredondamento é feito na apresentação.
 
-SELIC e CDI são consultados ao abrir uma comparação, compartilhados entre financiamento e aplicação. No financiamento, são referências informativas; na aplicação, participam do cálculo do rendimento bruto. O app informa quando as obteve; a resposta da BrasilAPI não fornece a data-base. Loading ou erro dessas referências não bloqueiam a simulação manual.
+SELIC e CDI são consultados quando a comparação dos dois carros é aberta. A mesma resposta é compartilhada entre o financiamento e a aplicação hipotética. No financiamento, são referências informativas e não preenchem a taxa do usuário. O app informa quando as obteve; a resposta da BrasilAPI não fornece a data-base. Loading ou erro dessas referências não bloqueiam a simulação manual.
 
 A simulação não inclui IOF, tarifas ou outros encargos e não representa o CET de uma proposta bancária. [Informações do Banco Central sobre CET](https://www.bcb.gov.br/meubc/faqs/p/cuidados-na-hora-de-contratar-uma-operacao-de-credito).
 
@@ -94,18 +94,25 @@ custo por km = uso mensal ÷ km mensal
 desembolso mensal durante o financiamento = uso mensal + parcela
 ```
 
-Consumo e preço do combustível devem ser positivos. Com km zero, as despesas fixas continuam disponíveis e o custo por km fica indisponível. O custo de uso é separado do valor de aquisição, evitando somar o preço FIPE novamente às parcelas.
+Consumo e preço do combustível devem ser positivos. Com km zero, as despesas fixas continuam disponíveis e o custo por km fica indisponível. O custo de uso é separado do valor de aquisição, evitando somar o preço FIPE novamente às parcelas. Quando há financiamento, o resumo compara o gasto mensal durante as parcelas, sem multiplicá-lo por 12; a linha de uso anual continua excluindo as parcelas.
 
 ### IPVA estimado
 
-O cenário inicial usa **4% para automóvel particular em MG**, referência do exercício **2026**, verificada em **18/11/2026**. A alíquota é editável. Para outra UF, o usuário deve fornecer a alíquota manualmente.
+O cenário inicial usa **4% para automóvel particular em MG**, referência do exercício **2026**, verificada em **19/11/2026**. A alíquota é editável. Para outra UF, o usuário deve fornecer a alíquota manualmente.
 
 ```text
-IPVA anual estimado = preço FIPE salvo × alíquota percentual ÷ 100
+Se fabricação completar 20 anos ou mais no exercício (a partir de 2026): IPVA = 0
+Caso contrário: IPVA anual estimado = preço FIPE salvo × alíquota percentual ÷ 100
 ```
 
-É uma estimativa, sem inferir isenções, descontos ou proporcionalidade. A base oficial de cálculo da Sefaz pode ser diferente da FIPE salva. Não há tabela automática das 27 UFs.
+É uma estimativa que considera a imunidade por idade de automóveis de passageiros; não infere outras isenções, descontos ou proporcionalidade. A base oficial de cálculo da Sefaz pode ser diferente da FIPE salva. Não há tabela automática das 27 UFs.
 
+A partir do exercício de 2026, o app considera a imunidade nacional de IPVA para automóveis de passageiros com **20 anos ou mais de fabricação**, conforme a EC 137/2025. No exercício de 2026, o corte é fabricação até 2006, inclusive. O benefício é aplicado separadamente a cada carro e também zera sua provisão mensal no custo de uso. A regra de idade vale tanto no cenário de MG quanto na alíquota manual; não cobre automaticamente benefícios estaduais com prazos menores.
+
+A FIPE fornece o ano-modelo, que pode diferir da fabricação. Os campos **Fabricação A/B** começam com uma estimativa baseada no ano-modelo e devem ser conferidos no documento do veículo. Para zero km ou ano-modelo futuro, o valor inicial é o exercício de 2026. Ajustes de fabricação ficam vinculados ao veículo e são preservados ao inverter A/B. O comparativo continua restrito ao cenário de automóveis de passageiros: a imunidade não é generalizada a todas as categorias da FIPE.
+
+- [EC 137/2025 — fonte da imunidade por idade](https://legis.senado.leg.br/norma/41822113/publicacao/41822284)
+- [Aplicação em MG no IPVA 2026 — SEF/MG](https://www.fazenda.mg.gov.br/noticias/2026/2026.02.02_IPVA/index.html)
 - [Regra geral e alíquotas — SEF/MG](https://www.fazenda.mg.gov.br/empresas/legislacao_tributaria/ipva/duvidas_frequentes/index.html)
 - [Base de cálculo — SEF/MG](https://www.fazenda.mg.gov.br/empresas/impostos/ipva/calculo.html)
 
@@ -120,7 +127,7 @@ rendimento bruto = saldo final − capital
 
 A interface mostra capital inicial, rendimento bruto e saldo final bruto para cada carro. Assume taxa anual efetiva constante, capitalização composta, ausência de aportes ou retiradas e não desconta impostos, tarifas ou inflação. Não representa um produto financeiro específico, uma previsão ou garantia de rendimento. Não inclui parcelas nem estima o preço futuro do carro: são cenários separados de não comprar e manter o dinheiro aplicado.
 
-A resposta da API não informa a data-base das taxas; o app identifica o momento em que as recebeu. Se a consulta falhar, a projeção fica indisponível com opção de tentar novamente, enquanto os demais cálculos locais continuam disponíveis. Taxa e prazo da aplicação são independentes dos campos do financiamento.
+A resposta da API não informa a data-base das taxas; o app identifica o momento em que as recebeu. Se a consulta falhar, a projeção fica indisponível com opção de tentar novamente, enquanto os demais cálculos locais continuam disponíveis. Taxa e prazo da aplicação são independentes dos campos do financiamento. Inverter A/B preserva essas escolhas.
 
 ## Fontes externas
 
@@ -132,9 +139,9 @@ A resposta da API não informa a data-base das taxas; o app identifica o momento
 | `/fipe/veiculos/v1/{tipo}/{marca}` | Modelos da marca. |
 | `/fipe/anos/v1/{tipo}/{marca}/{modelo}` | Anos e combustíveis. |
 | `/fipe/detalhes/v1/{tipo}/{marca}/{modelo}/{ano}` | Preço e detalhes. |
-| `/taxas/v1` | SELIC/CDI para referência e cálculo da aplicação hipotética. |
+| `/taxas/v1` | SELIC/CDI para referência do financiamento e cálculo da aplicação hipotética. |
 
-Não é necessária chave de API. Consulta FIPE e referências econômicas precisam de conexão; favoritos e cálculos locais funcionam offline.
+Não é necessária chave de API. Consulta FIPE e referências econômicas precisam de conexão; favoritos e cálculos locais funcionam offline. A projeção de aplicação exige carregar as taxas na sessão atual; elas não são persistidas entre reinícios.
 
 ## Design
 
@@ -148,23 +155,22 @@ React Native, Expo SDK 58, TypeScript, Expo Router, `fetch`, AsyncStorage, Conte
 
 - `src/app`: cinco telas e layouts de navegação.
 - `src/components`: seletores com busca, resumo de veículo, feedback, campos e comparações reutilizáveis.
+- `src/constants`: tokens de cor, tipografia, espaçamento e raio.
 - `src/services`: comunicação com a BrasilAPI.
 - `src/context` e `src/hooks`: favoritos, persistência e carregamento de opções.
 - `src/utils`: funções de cálculo independentes da interface.
 - `src/types` e `src/data`: contratos, validação e referência de IPVA.
-- `tests`: cenários de cálculos e validação dos dados salvos.
 
 ## Validação
 
 ```bash
 npm run lint
 npx tsc --noEmit
-npm test
 npx expo-doctor
 npx expo export --platform android
 ```
 
-Foram verificados lint, TypeScript, 13 testes automatizados, diagnóstico Expo com 20/20 verificações e geração de bundle Android. Também foi percorrido o fluxo real da BrasilAPI para um Corolla: marcas, modelos, anos e detalhes retornaram HTTP 200.
+Foram verificados lint, TypeScript, diagnóstico Expo com 20/20 verificações e geração de bundle Android. Os cenários de cálculo foram verificados durante o desenvolvimento; os arquivos de testes foram removidos desta versão, assim como o comando `npm test`. A correção da imunidade de IPVA foi conferida com sete cenários de regressão executados em arquivo temporário. Também foi percorrido o fluxo real da BrasilAPI para um Corolla: marcas, modelos, anos e detalhes retornaram HTTP 200.
 
 Ainda é necessário validar em aparelho/emulador: navegação, tema claro/escuro, teclado, nomes longos, áreas seguras, comportamento sem conexão, reinício para verificar persistência e falhas de armazenamento. O bundle exportado não equivale a um APK instalado nem substitui essa validação.
 
@@ -187,8 +193,10 @@ Ainda é necessário validar em aparelho/emulador: navegação, tema claro/escur
 | 12 | IPVA estimado | `a2db88d` |
 | 13 | Financiamento e referências econômicas | `fac3f8b` |
 | 14 | Revisão e validação automatizada | `9d8cd9f` |
-| 15–16 | Latin NCAP e NHTSA | Evolução futura, opcional |
-| 17 | Documentação e roteiro | Este documento |
+| 15 | Documentação e roteiro da entrega principal | `c4579b9` |
+| 16 | Atualização de layout e usabilidade | `75ca7bb` |
+| 17 | Aplicação hipotética do valor FIPE com SELIC/CDI | `90c82c8` |
+| 18 | Correções finais: inversão A/B, botões, resumo e IPVA por idade | Este commit |
 
 ## Roteiro de apresentação
 
@@ -198,17 +206,16 @@ Ainda é necessário validar em aparelho/emulador: navegação, tema claro/escur
 4. Informar consumo e despesas; mostrar custo mensal, anual e por km.
 5. Alterar alíquota de IPVA e explicar por que o resultado é estimado.
 6. Ativar financiamento e demonstrar taxa manual, parcelas e juros totais.
-7. Demonstrar taxa zero, entrada integral e quilometragem zero.
-8. Desconectar e mostrar favoritos e cálculos locais; reiniciar para conferir persistência.
-9. Explicar componentes reutilizáveis, estado, efeitos, serviços e funções de cálculo.
+7. Simular a aplicação do valor FIPE: alternar SELIC/CDI e alterar o prazo, explicando as hipóteses do rendimento bruto.
+8. Demonstrar taxa zero, entrada integral e quilometragem zero.
+9. Desconectar e mostrar favoritos e cálculos locais; reiniciar para conferir persistência.
+10. Explicar componentes reutilizáveis, estado, efeitos, serviços e funções de cálculo.
 
 ## Evoluções futuras
 
-- Catálogo local de testes Latin NCAP, com versão, equipamentos, protocolo, fonte e condições de aplicação verificadas.
-- Referências NHTSA e recalls dos EUA, sem assumir equivalência com o carro brasileiro. A busca exigirá correspondência explícita e seleção de variante quando necessário.
 - Catálogo de consumo do Inmetro para reduzir digitação.
 
-Esses itens não fazem parte da entrega principal implementada. A versão atual não usa IA para produzir análises durante o uso do aplicativo.
+Esse item não faz parte da entrega principal implementada. A versão atual não usa IA para produzir análises durante o uso do aplicativo.
 
 ## Apoio de inteligência artificial
 
