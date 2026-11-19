@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Linking, View } from "react-native";
+import { Linking, Switch, View } from "react-native";
 import { RateReference } from "./RateReference";
 import { MG_IPVA } from "@/data/ipva";
 import {
@@ -8,33 +8,46 @@ import {
   money,
   financing,
 } from "@/utils/calculations";
-import { OptionPicker } from "./OptionPicker";
-import { NumberField } from "./NumberField";
-import { CompareRow } from "./CompareRow";
+import { Segmented } from "./OptionPicker";
+import { NumberField, FieldPair } from "./NumberField";
+import { CompareRow, CompareTable } from "./CompareRow";
 import { Feedback } from "./Feedback";
 import { ActionButton } from "./ActionButton";
 import { RunningCostForm } from "./RunningCostForm";
 import { ThemedText } from "./ThemedText";
+import { Section } from "./Section";
+import { Card } from "./Card";
+import { usePalette } from "@/constants/theme";
+
 export function FinancialScenario({
   priceA,
   priceB,
+  nameA,
+  nameB,
 }: {
   priceA: number;
   priceB: number;
+  nameA: string;
+  nameB: string;
 }) {
+  const c = usePalette();
   const [finance, setFinance] = useState({
-    downA: "",
-    downB: "",
+    downA: "0",
+    downB: "0",
     rate: "",
     months: "",
   });
-  const [simulate, setSimulate] = useState(false);
   const [enabled, setEnabled] = useState(false);
+  const set = (key: keyof typeof finance) => (value: string) =>
+    setFinance((s) => ({ ...s, [key]: value }));
+
+  // O cálculo é automático assim que todos os campos estão preenchidos.
+  const complete = Object.values(finance).every((value) => value.trim() !== "");
   let loan:
     | { a: ReturnType<typeof financing>; b: ReturnType<typeof financing> }
     | undefined;
   let loanError: string | undefined;
-  if (enabled && simulate) {
+  if (enabled && complete) {
     try {
       const rate = nonNegative(finance.rate, "Taxa anual");
       const months = nonNegative(finance.months, "Prazo");
@@ -56,6 +69,7 @@ export function FinancialScenario({
       loanError = (error as Error).message;
     }
   }
+
   const [region, setRegion] = useState("MG");
   const [tax, setTax] = useState(String(MG_IPVA.percent));
   let annualA: number | undefined,
@@ -66,132 +80,187 @@ export function FinancialScenario({
     annualA = estimatedIpva(priceA, percent);
     annualB = estimatedIpva(priceB, percent);
   } catch (error) {
-    taxError = (error as Error).message;
+    taxError = tax.trim()
+      ? (error as Error).message
+      : "Informe a alíquota de IPVA.";
   }
+
   return (
-    <View style={{ gap: 16 }}>
-      <ThemedText style={{ fontSize: 22, fontWeight: "700" }}>
-        Financiamento
-      </ThemedText>
-      <ActionButton
-        label={
-          enabled ? "Usar cenário de compra à vista" : "Simular financiamento"
+    <>
+      <Section
+        step="Passo 2"
+        title="Financiamento"
+        description={
+          enabled
+            ? "Informe a taxa efetiva anual oferecida. Sem IOF, tarifas ou outros encargos; não representa o CET."
+            : "Desativado: considerando compra à vista."
         }
-        onPress={() => setEnabled((value) => !value)}
-      />
-      {enabled && (
-        <>
-          <RateReference />
-          <ThemedText>
-            Informe a taxa efetiva anual oferecida. Simulação sem IOF, tarifas
-            ou outros encargos; não representa o CET de uma proposta.
-          </ThemedText>
-          {(Object.keys(finance) as (keyof typeof finance)[]).map((key) => (
-            <NumberField
-              key={key}
-              label={FINANCE_LABELS[key]}
-              value={finance[key]}
-              onChange={(value) => setFinance((s) => ({ ...s, [key]: value }))}
+        right={
+          <Switch
+            accessibilityLabel="Simular financiamento"
+            value={enabled}
+            onValueChange={setEnabled}
+            trackColor={{ true: c.primary, false: c.hairlineStrong }}
+            thumbColor={c.canvas}
+            ios_backgroundColor={c.hairlineStrong}
+          />
+        }
+      >
+        {enabled && (
+          <>
+            <RateReference />
+            <FieldPair>
+              <NumberField
+                label="Taxa anual"
+                suffix="% a.a."
+                placeholder="ex. 24"
+                value={finance.rate}
+                onChange={set("rate")}
+              />
+              <NumberField
+                label="Prazo"
+                suffix="meses"
+                placeholder="ex. 48"
+                integer
+                value={finance.months}
+                onChange={set("months")}
+              />
+            </FieldPair>
+            <FieldPair>
+              <NumberField
+                label="Entrada A"
+                prefix="R$"
+                value={finance.downA}
+                onChange={set("downA")}
+              />
+              <NumberField
+                label="Entrada B"
+                prefix="R$"
+                value={finance.downB}
+                onChange={set("downB")}
+              />
+            </FieldPair>
+            {!complete && (
+              <ThemedText variant="bodySm" tone="muted">
+                Preencha taxa, prazo e entradas para ver as parcelas.
+              </ThemedText>
+            )}
+            {loanError && <Feedback tone="error" message={loanError} />}
+            {loan && (
+              <CompareTable nameA={nameA} nameB={nameB}>
+                <CompareRow
+                  label="Parcela mensal"
+                  a={money(loan.a.installment)}
+                  b={money(loan.b.installment)}
+                  compare={[loan.a.installment, loan.b.installment]}
+                  strong
+                />
+                <CompareRow
+                  label="Valor financiado"
+                  a={money(loan.a.principal)}
+                  b={money(loan.b.principal)}
+                />
+                <CompareRow
+                  label="Juros totais"
+                  a={money(loan.a.interest)}
+                  b={money(loan.b.interest)}
+                  compare={[loan.a.interest, loan.b.interest]}
+                />
+                <CompareRow
+                  label="Entrada + parcelas"
+                  a={money(loan.a.total)}
+                  b={money(loan.b.total)}
+                  compare={[loan.a.total, loan.b.total]}
+                />
+              </CompareTable>
+            )}
+          </>
+        )}
+      </Section>
+
+      <Section
+        step="Passo 3"
+        title="IPVA estimado"
+        description="Estimativa sobre a FIPE salva, sem isenções, descontos ou proporcionalidade. A base oficial da Sefaz pode ser diferente."
+      >
+        <Segmented
+          label="Cenário tributário"
+          value={region}
+          options={[
+            { label: "MG · particular", value: "MG" },
+            { label: "Outra UF", value: "manual" },
+          ]}
+          onSelect={(option) => {
+            setRegion(option.value);
+            setTax(option.value === "MG" ? String(MG_IPVA.percent) : "");
+          }}
+        />
+        <NumberField
+          label="Alíquota anual"
+          suffix="%"
+          placeholder="ex. 3,5"
+          value={tax}
+          onChange={setTax}
+          hint={
+            region === "MG" && tax === String(MG_IPVA.percent)
+              ? `Regra geral de MG, exercício ${MG_IPVA.year}.`
+              : "Alíquota informada por você."
+          }
+        />
+        {taxError && <Feedback tone="error" message={taxError} />}
+        {annualA !== undefined && annualB !== undefined && (
+          <CompareTable nameA={nameA} nameB={nameB}>
+            <CompareRow
+              label="IPVA por ano"
+              a={money(annualA)}
+              b={money(annualB)}
+              compare={[annualA, annualB]}
+              strong
             />
-          ))}
-          <ActionButton
-            label="Calcular financiamento"
-            onPress={() => setSimulate(true)}
-          />
-          {loanError && <Feedback message={loanError} />}
-          {loan && (
-            <>
-              <CompareRow
-                label="Valor financiado"
-                a={money(loan.a.principal)}
-                b={money(loan.b.principal)}
-              />
-              <CompareRow
-                label="Parcela mensal"
-                a={money(loan.a.installment)}
-                b={money(loan.b.installment)}
-              />
-              <CompareRow
-                label="Juros totais"
-                a={money(loan.a.interest)}
-                b={money(loan.b.interest)}
-              />
-              <CompareRow
-                label="Entrada + parcelas"
-                a={money(loan.a.total)}
-                b={money(loan.b.total)}
-              />
-            </>
-          )}
-        </>
-      )}
-      <ThemedText style={{ fontSize: 22, fontWeight: "700" }}>
-        IPVA estimado
-      </ThemedText>
-      <OptionPicker
-        label="UF / cenário tributário"
-        value={region}
-        options={[
-          { label: "MG — automóvel particular", value: "MG" },
-          { label: "Outra UF — alíquota manual", value: "manual" },
-        ]}
-        onSelect={(option) => {
-          setRegion(option.value);
-          setTax(option.value === "MG" ? String(MG_IPVA.percent) : "");
-        }}
-      />
-      <NumberField
-        label="Alíquota anual de IPVA (%)"
-        value={tax}
-        onChange={setTax}
-      />
-      <ThemedText>
-        {region === "MG" && tax === String(MG_IPVA.percent)
-          ? `Regra geral MG, exercício ${MG_IPVA.year}: ${MG_IPVA.percent}%.`
-          : "Alíquota informada pelo usuário."}{" "}
-        Estimativa sobre a FIPE salva, sem isenções, descontos ou
-        proporcionalidade. A base oficial da Sefaz pode ser diferente.
-      </ThemedText>
-      <ActionButton
-        label="Fonte oficial de MG"
-        onPress={() => {
-          void Linking.openURL(MG_IPVA.source);
-        }}
-      />
-      {taxError && <Feedback message={taxError} />}
-      {annualA !== undefined && annualB !== undefined && (
-        <>
-          <CompareRow
-            label="IPVA anual estimado"
-            a={money(annualA)}
-            b={money(annualB)}
-          />
-          <CompareRow
-            label="Provisão mensal de IPVA"
-            a={money(annualA / 12)}
-            b={money(annualB / 12)}
-          />
-        </>
-      )}
+            <CompareRow
+              label="Provisão mensal"
+              a={money(annualA / 12)}
+              b={money(annualB / 12)}
+            />
+          </CompareTable>
+        )}
+        {region === "MG" && (
+          <View style={{ alignSelf: "flex-start" }}>
+            <ActionButton
+              compact
+              variant="ghost"
+              icon="open-outline"
+              label="Fonte oficial (SEF/MG)"
+              onPress={() => {
+                void Linking.openURL(MG_IPVA.source);
+              }}
+            />
+          </View>
+        )}
+      </Section>
+
       <RunningCostForm
+        nameA={nameA}
+        nameB={nameB}
         annualTaxA={annualA ?? 0}
         annualTaxB={annualB ?? 0}
         installmentA={loan?.a.installment}
         installmentB={loan?.b.installment}
         blocked={
-          taxError ??
-          (enabled && !loan
-            ? "Conclua uma simulação válida ou escolha compra à vista para incluir a parcela correta."
-            : undefined)
+          taxError
+            ? "Corrija a alíquota de IPVA para calcular o custo de uso."
+            : enabled && !loan
+              ? "Conclua o financiamento (passo 2) ou desative-o para calcular o custo mensal total."
+              : undefined
         }
       />
-    </View>
+      <Card tone="soft">
+        <ThemedText variant="caption" tone="muted">
+          Valores estimados a partir dos preços FIPE salvos e das premissas
+          informadas. Não constituem proposta de crédito nem cálculo oficial de
+          tributos.
+        </ThemedText>
+      </Card>
+    </>
   );
 }
-
-const FINANCE_LABELS = {
-  downA: "Entrada A (R$)",
-  downB: "Entrada B (R$)",
-  rate: "Taxa efetiva anual (%)",
-  months: "Prazo (meses inteiros)",
-};

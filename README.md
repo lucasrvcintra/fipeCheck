@@ -46,13 +46,13 @@ npm run android
 
 ## Consulta e armazenamento
 
-O tipo selecionado carrega as marcas; a marca carrega os modelos; e o modelo carrega as opções de ano/combustível. O preço é buscado somente ao pressionar **Consultar FIPE**.
+O tipo selecionado carrega as marcas; a marca carrega os modelos; e o modelo carrega as opções de ano/combustível. O preço é buscado somente ao pressionar **Consultar preço**.
 
 Alterar uma seleção limpa os campos dependentes e o resultado anterior. As requisições possuem loading, erro, nova tentativa e timeout de 20 segundos. Respostas canceladas não substituem as seleções atuais.
 
 Favoritos guardam os identificadores da consulta, os dados FIPE e a data de salvamento, usando a chave `fipecheck_favorites_v1`. Consultar e salvar novamente a mesma combinação atualiza o registro. Quando a API não fornece `dataConsulta`, o app registra o horário de recebimento da resposta.
 
-O comparativo usa os preços salvos e avisa sobre meses de referência diferentes. Os preços não são atualizados automaticamente. A opção **Salvar km e preço do litro** grava essas duas preferências em `fipecheck_usage_v1`. Os demais campos de simulação ficam na sessão; trocar a dupla de carros reinicia o cenário.
+O comparativo usa os preços salvos e avisa sobre meses de referência diferentes. Os preços não são atualizados automaticamente. A opção **Lembrar km e preço do litro** grava essas duas preferências em `fipecheck_usage_v1`. Os demais campos de simulação ficam na sessão; trocar a dupla de carros reinicia o cenário.
 
 A leitura inicial do armazenamento precisa terminar antes de salvar. Falhas são apresentadas na interface; em caso de erro de gravação, o estado anterior é mantido.
 
@@ -64,7 +64,7 @@ Os valores monetários são apresentados em reais. Nos campos numéricos, prefir
 
 O comparativo mostra a diferença de B em relação a A, em reais e percentual sobre A. Com preço-base zero, o percentual fica indisponível.
 
-O financiamento começa desativado, representando compra à vista. Ao ativá-lo, informe entrada por carro, prazo inteiro positivo em meses e taxa efetiva anual compartilhada. A entrada deve estar entre zero e o preço do carro; a taxa não pode ser negativa.
+O financiamento começa desativado, representando compra à vista. Ao ativá-lo pelo interruptor, informe entrada por carro (inicialmente zero), prazo inteiro positivo em meses e taxa efetiva anual compartilhada. Os cálculos são atualizados automaticamente quando os campos estão completos. A entrada deve estar entre zero e o preço do carro; a taxa não pode ser negativa.
 
 Com `taxa = percentual anual / 100`:
 
@@ -122,6 +122,12 @@ IPVA anual estimado = preço FIPE salvo × alíquota percentual ÷ 100
 | `/taxas/v1` | SELIC/CDI de referência. |
 
 Não é necessária chave de API. Consulta FIPE e referências econômicas precisam de conexão; favoritos e cálculos locais funcionam offline.
+
+## Design
+
+A interface segue as diretrizes do [DESIGN.md da NerdWallet](https://getdesign.md/nerdwallet/design-md) (análise independente, não oficial): verde *spruce* apenas para ações e estados ativos, superfícies *mint* para separar seções, linhas finas no lugar de sombras, botões com raio de 2px e cartões com 8px, e destaque em verde-limão sobre o verde escuro. A fonte Gotham foi substituída pela Montserrat (`@expo-google-fonts/montserrat`), e o texto corrido usa peso 400 em vez de 300 para manter a legibilidade em telas pequenas. O documento não define tema escuro; a paleta escura foi derivada. Os tokens ficam em `src/constants/theme.ts`.
+
+No comparativo, os campos de A e B ficam lado a lado, o menor valor de cada linha é destacado em verde e um bloco de destaque resume a diferença de compra e de gasto mensal.
 
 ## Organização e tecnologias
 

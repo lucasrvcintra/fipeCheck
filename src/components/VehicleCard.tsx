@@ -1,41 +1,89 @@
 import { View, StyleSheet } from "react-native";
-import { useTheme } from "expo-router/react-navigation";
+import { Ionicons } from "@expo/vector-icons";
 import type { VehicleDetails } from "@/types/fipe";
 import { ThemedText } from "./ThemedText";
+import { Card } from "./Card";
 import type { ReactNode } from "react";
+import { radius, space, usePalette } from "@/constants/theme";
+
 export function VehicleCard({
   details,
   children,
+  footnote,
+  type,
 }: {
   details: VehicleDetails;
   children?: ReactNode;
+  footnote?: string;
+  type?: "carros" | "motos" | "caminhoes";
 }) {
-  const { colors } = useTheme();
+  const c = usePalette();
+  const icon =
+    type === "motos" ? "bicycle" : type === "caminhoes" ? "bus" : "car-sport";
   return (
-    <View
-      style={[
-        styles.card,
-        { backgroundColor: colors.card, borderColor: colors.border },
-      ]}
-    >
-      <ThemedText style={styles.title}>
-        {details.marca} {details.modelo}
+    <Card>
+      <View style={styles.head}>
+        <View style={[styles.icon, { backgroundColor: c.mint100 }]}>
+          <Ionicons name={icon} size={20} color={c.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <ThemedText variant="eyebrow" tone="muted">
+            {details.marca}
+          </ThemedText>
+          <ThemedText variant="h3">{details.modelo}</ThemedText>
+        </View>
+      </View>
+      <View style={styles.tags}>
+        <Tag
+          text={
+            details.anoModelo === 32000 ? "Zero km" : String(details.anoModelo)
+          }
+        />
+        <Tag text={details.combustivel} />
+        <Tag text={`FIPE ${details.codigoFipe}`} />
+      </View>
+      <View style={[styles.price, { backgroundColor: c.mint50 }]}>
+        <ThemedText variant="eyebrow" tone="muted">
+          Preço FIPE · {details.mesReferencia.trim()}
+        </ThemedText>
+        <ThemedText variant="number" tone="primary">
+          {details.valor}
+        </ThemedText>
+      </View>
+      <ThemedText variant="caption" tone="muted">
+        {footnote ?? `Consultado em ${details.dataConsulta}`}
       </ThemedText>
-      <ThemedText style={styles.price}>{details.valor}</ThemedText>
-      <ThemedText>
-        {details.anoModelo === 32000 ? "Zero km" : details.anoModelo} ·{" "}
-        {details.combustivel}
-      </ThemedText>
-      <ThemedText>
-        FIPE {details.codigoFipe} · Referência: {details.mesReferencia.trim()}
-      </ThemedText>
-      <ThemedText>Consulta: {details.dataConsulta}</ThemedText>
       {children}
+    </Card>
+  );
+}
+
+function Tag({ text }: { text: string }) {
+  const c = usePalette();
+  return (
+    <View style={[styles.tag, { borderColor: c.hairlineStrong }]}>
+      <ThemedText variant="caption" tone="body">
+        {text}
+      </ThemedText>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
-  card: { padding: 16, borderWidth: 1, borderRadius: 12, gap: 10 },
-  title: { fontWeight: "700" },
-  price: { color: "#245bce", fontWeight: "700", fontSize: 24, lineHeight: 32 },
+  head: { flexDirection: "row", alignItems: "center", gap: space.md },
+  icon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tags: { flexDirection: "row", flexWrap: "wrap", gap: space.xs + 2 },
+  tag: {
+    borderWidth: 1,
+    borderRadius: radius.full,
+    paddingHorizontal: space.sm + 2,
+    paddingVertical: 3,
+  },
+  price: { borderRadius: radius.card, padding: space.md, gap: 2 },
 });
