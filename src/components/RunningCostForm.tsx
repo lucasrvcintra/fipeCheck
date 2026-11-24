@@ -124,7 +124,7 @@ export function RunningCostForm({
 
   return (
     <Section
-      step="Passo 4"
+      step="Passo 4 de 5"
       title="Custo de uso"
       description="Valores iniciais são exemplos editáveis. Use vírgula para decimais."
     >

@@ -25,7 +25,7 @@ O catálogo de consumo do Inmetro fica como evolução futura.
 | Sobre | Integrantes, objetivo e link da fonte dos dados. |
 | Consulta FIPE | Formulário único com tipo, marca, modelo e ano/combustível. O preço aparece na mesma tela e pode ser salvo ou atualizado nos favoritos. |
 | Favoritos | Lista dos resultados salvos, disponível offline, com opção de remoção. |
-| Comparativo | Seleção de dois carros favoritos distintos; diferença de preço, custo de uso, IPVA, financiamento e aplicação hipotética. |
+| Comparativo | Seleção de dois carros favoritos distintos; diferença de preço e, em cinco passos, compra, financiamento, IPVA, custo de uso e aplicação hipotética. |
 
 O Drawer contém Início, FIPE e Sobre. Dentro de FIPE, as Tabs contêm Consulta, Favoritos e Comparativo. Consulta e favoritos aceitam carros, motos e caminhões; o comparativo aceita somente carros.
 
@@ -54,7 +54,7 @@ Alterar uma seleção limpa os campos dependentes e o resultado anterior. As req
 
 Favoritos guardam os identificadores da consulta, os dados FIPE e a data de salvamento, usando a chave `fipecheck_favorites_v1`. Consultar e salvar novamente a mesma combinação atualiza o registro. Quando a API não fornece `dataConsulta`, o app registra o horário de recebimento da resposta.
 
-O comparativo usa os preços salvos e avisa sobre meses de referência diferentes. Os preços não são atualizados automaticamente. A opção **Lembrar km e preço do litro** grava essas duas preferências em `fipecheck_usage_v1`. Os demais campos de simulação ficam na sessão; trocar a dupla de carros reinicia o cenário. Inverter A e B preserva as premissas compartilhadas e mantém entrada, consumo e despesas associados ao respectivo veículo.
+O comparativo usa os preços salvos e avisa sobre meses de referência diferentes. Os preços não são atualizados automaticamente. A opção **Lembrar km e preço do litro** grava essas duas preferências em `fipecheck_usage_v1`. Os demais campos de simulação ficam na sessão e são preservados ao avançar ou voltar entre os passos; trocar a dupla de carros reinicia o cenário e volta ao passo 1. Inverter A e B preserva as premissas compartilhadas e mantém entrada, consumo e despesas associados ao respectivo veículo.
 
 A leitura inicial do armazenamento precisa terminar antes de salvar. Falhas são apresentadas na interface; em caso de erro de gravação, o estado anterior é mantido.
 
@@ -151,6 +151,18 @@ A interface segue as diretrizes do [DESIGN.md da NerdWallet](https://getdesign.m
 
 No comparativo, os campos de A e B ficam lado a lado, o menor valor de cada linha é destacado em verde e um bloco de destaque resume a diferença de compra e de gasto mensal.
 
+### Comparativo em passos
+
+Por sugestão do professor, o comparativo deixou de ser uma rolagem longa com todas as seções em sequência e passou a ser dividido em cinco passos: Compra, Financiamento, IPVA estimado, Custo de uso e Aplicação. É uma melhoria apenas de usabilidade: cálculos, campos e regras não mudaram.
+
+- O seletor dos carros e o bloco de diferença de compra continuam sempre visíveis no topo.
+- Um indicador mostra os cinco passos numerados, o atual em destaque e os anteriores marcados como concluídos, além do título "Passo X de 5". Tocar em um número leva direto ao passo.
+- Os botões **Anterior** e **Próximo** ficam no fim de cada passo. A navegação é livre, pois todos os campos têm valor inicial; os avisos existentes continuam indicando o que falta, como concluir o financiamento antes do custo mensal total.
+- Ao trocar de passo, a tela rola até o indicador.
+- Todos os passos permanecem montados e os inativos ficam ocultos (`display: "none"`). Assim, os valores digitados não se perdem e o custo de uso continua recebendo IPVA e parcelas dos passos anteriores.
+
+Foi verificado se o Expo oferece um componente pronto para isso. O `@expo/ui` (já instalado) não tem um componente de passos: o `Stepper` do SwiftUI é o controle numérico de "+/−" do iOS, e o `PagerView` (`@expo/ui/community/pager-view`) não funciona na web, exige altura fixa por página e o gesto de deslizar conflita com os campos dos formulários. Por isso, o indicador foi criado em `src/components/Stepper.tsx` com `View` e `Pressable`, usando os tokens do tema e funcionando em Android, iOS e web.
+
 ## Organização e tecnologias
 
 React Native, Expo SDK 58, TypeScript, Expo Router, `fetch`, AsyncStorage, Context, `useState`, `useEffect`, `StyleSheet` e Flexbox.
@@ -200,13 +212,14 @@ A validação manual do funcionamento foi realizada pelos integrantes, que confi
 | 17 | Aplicação hipotética do valor FIPE com SELIC/CDI | `90c82c8` |
 | 18 | Correções finais: inversão A/B, botões, resumo e IPVA por idade | `db45885` |
 | 19 | Revisão do README | `3796689` |
-| 20 | Declaração de uso de IA e validação manual | Este commit |
+| 20 | Declaração de uso de IA e validação manual | `f16a0e1` |
+| 21 | Comparativo em passos | Este commit |
 
 ## Roteiro de apresentação
 
 1. Navegar pelo Drawer e pelas três abas de FIPE.
 2. Consultar dois carros e salvar os resultados nos favoritos.
-3. Escolher a dupla no Comparativo e explicar os meses de referência.
+3. Escolher a dupla no Comparativo, explicar os meses de referência e mostrar a navegação em passos.
 4. Informar consumo e despesas; mostrar custo mensal, anual e por km.
 5. Alterar alíquota de IPVA e explicar por que o resultado é estimado.
 6. Ativar financiamento e demonstrar taxa manual, parcelas e juros totais.
@@ -226,6 +239,6 @@ Esse item não faz parte da entrega principal implementada. A versão atual não
 | Ferramenta | Modelo | Finalidade |
 | --- | --- | --- |
 | Codex | GPT-6 | Escolha do nome fipeCheck, elaboração e revisão do plano, redação deste README, consulta à documentação, execução de verificações (lint, TypeScript, Expo Doctor) e geração de código das funcionalidades e dos testes. |
-| Claude Code | Claude Opus 5.5 | Conferência do projeto em relação aos requisitos do enunciado, revisão do README e desta seção, explicação de um aviso de navegação do Expo Router e de uma falha de rede no teste em Android, e explicação de conceitos (hooks, Context, `fetch`, navegação) para a preparação da apresentação. |
+| Claude Code | Claude Opus 5.5 | Conferência do projeto em relação aos requisitos do enunciado, revisão do README e desta seção, explicação de um aviso de navegação do Expo Router e de uma falha de rede no teste em Android, explicação de conceitos (hooks, Context, `fetch`, navegação) para a preparação da apresentação e implementação do comparativo em passos, revisada e validada manualmente pelos integrantes. |
 
 A criação do projeto, o reset do template, a proposta do app com a descrição das telas e as instruções iniciais foram feitos pelos integrantes, sem uso de agente. Só depois dessa etapa o agente passou a ser usado. Por decisão da dupla, ele recebeu a instrução de ler as entregas anteriores de Lucas Cintra na disciplina ([currencyConverter](https://github.com/lucasrvcintra/currencyConverter), [newsApp](https://github.com/lucasrvcintra/newsApp), [visitCard](https://github.com/lucasrvcintra/visitCard), [trafficLight](https://github.com/lucasrvcintra/trafficLight) e [ReactNative-Uniacademia](https://github.com/lucasrvcintra/ReactNative-Uniacademia)), principalmente o currencyConverter, e replicar neste projeto a estrutura de rotas (Drawer com Tabs aninhadas), os componentes `ThemedText` e `ThemedView`, o `FavoritesContext` com AsyncStorage, a camada de serviços com `fetch` e a organização de pastas. As funcionalidades específicas do fipeCheck foram geradas pelo agente a partir das nossas instruções, seguindo esses mesmos padrões: o comparativo, os cálculos de custo, IPVA, financiamento e aplicação, e os hooks `useOptions`, `useStoredState` e `useRates`. Todo o código foi revisado e ajustado pelos integrantes, que se responsabilizam por ele.

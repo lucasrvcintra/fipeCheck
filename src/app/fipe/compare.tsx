@@ -1,6 +1,6 @@
 import { FinancialScenario } from "@/components/FinancialScenario";
-import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useRef, useState, type ComponentRef, type RefObject } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Screen } from "@/components/Screen";
 import { OptionPicker } from "@/components/OptionPicker";
@@ -14,6 +14,7 @@ import { Feedback } from "@/components/Feedback";
 import { ActionButton } from "@/components/ActionButton";
 import { Card } from "@/components/Card";
 import { Section } from "@/components/Section";
+import { StepIndicator, StepNav, StepPanel } from "@/components/Stepper";
 import { router } from "expo-router";
 import { useFavorites } from "@/context/FavoritesContext";
 import { parseNumber, comparePrices, money } from "@/utils/calculations";
@@ -23,6 +24,7 @@ import type { Favorite } from "@/types/fipe";
 export default function Compare() {
   const { favorites, ready, error, retry } = useFavorites();
   const c = usePalette();
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const [selectedA, setA] = useState<string>();
   const [selectedB, setB] = useState<string>();
   const cars = favorites.filter((item) => item.query.type === "carros");
@@ -39,6 +41,7 @@ export default function Compare() {
   return (
     <Screen
       tabs
+      scrollRef={scrollRef}
       title="Comparativo"
       subtitle="Compare compra, financiamento, IPVA, custo de uso e aplicação do dinheiro de dois carros salvos."
     >
@@ -122,7 +125,12 @@ export default function Compare() {
         )
       )}
       {a && b && (
-        <Comparison key={JSON.stringify([a.id, b.id].sort())} a={a} b={b} />
+        <Comparison
+          key={JSON.stringify([a.id, b.id].sort())}
+          a={a}
+          b={b}
+          scrollRef={scrollRef}
+        />
       )}
     </Screen>
   );
@@ -138,7 +146,33 @@ function ThemedHeading({ count }: { count: number }) {
   );
 }
 
-function Comparison({ a, b }: { a: Favorite; b: Favorite }) {
+const STEPS = [
+  "Compra",
+  "Financiamento",
+  "IPVA estimado",
+  "Custo de uso",
+  "Aplicação",
+];
+
+function Comparison({
+  a,
+  b,
+  scrollRef,
+}: {
+  a: Favorite;
+  b: Favorite;
+  scrollRef: RefObject<ComponentRef<typeof ScrollView> | null>;
+}) {
+  // A key do componente reinicia o passo quando a dupla de carros muda.
+  const [step, setStep] = useState(0);
+  const [stepperY, setStepperY] = useState(0);
+  const goTo = (index: number) => {
+    setStep(index);
+    scrollRef.current?.scrollTo({
+      y: Math.max(stepperY - space.md, 0),
+      animated: true,
+    });
+  };
   let priceA: number, priceB: number;
   try {
     priceA = parseNumber(a.details.valor);
@@ -171,45 +205,52 @@ function Comparison({ a, b }: { a: Favorite; b: Favorite }) {
             : `O carro B é ${percent}`
         }
       />
-      <Section step="Passo 1" title="Compra">
-        {a.details.mesReferencia.trim() !== b.details.mesReferencia.trim() && (
-          <Feedback
-            tone="tip"
-            title="Referências FIPE diferentes"
-            message="Os preços são de meses diferentes. Consulte novamente os dois carros para uma comparação justa."
-          />
-        )}
-        <CompareTable nameA={nameA} nameB={nameB}>
-          <CompareRow
-            label="Preço FIPE salvo"
-            a={money(priceA)}
-            b={money(priceB)}
-            compare={[priceA, priceB]}
-            strong
-          />
-          <CompareRow
-            label="Marca e modelo"
-            a={`${a.details.marca} ${a.details.modelo}`}
-            b={`${b.details.marca} ${b.details.modelo}`}
-          />
-          <CompareRow
-            label="Ano / combustível"
-            a={`${a.details.anoModelo === 32000 ? "0 km" : a.details.anoModelo} / ${a.details.combustivel}`}
-            b={`${b.details.anoModelo === 32000 ? "0 km" : b.details.anoModelo} / ${b.details.combustivel}`}
-          />
-          <CompareRow
-            label="Mês de referência"
-            a={a.details.mesReferencia.trim()}
-            b={b.details.mesReferencia.trim()}
-          />
-          <CompareRow
-            label="Data da consulta"
-            a={a.details.dataConsulta}
-            b={b.details.dataConsulta}
-          />
-        </CompareTable>
-      </Section>
+      <View onLayout={(event) => setStepperY(event.nativeEvent.layout.y)}>
+        <StepIndicator steps={STEPS} current={step} onSelect={goTo} />
+      </View>
+      <StepPanel active={step === 0}>
+        <Section step="Passo 1 de 5" title="Compra">
+          {a.details.mesReferencia.trim() !==
+            b.details.mesReferencia.trim() && (
+            <Feedback
+              tone="tip"
+              title="Referências FIPE diferentes"
+              message="Os preços são de meses diferentes. Consulte novamente os dois carros para uma comparação justa."
+            />
+          )}
+          <CompareTable nameA={nameA} nameB={nameB}>
+            <CompareRow
+              label="Preço FIPE salvo"
+              a={money(priceA)}
+              b={money(priceB)}
+              compare={[priceA, priceB]}
+              strong
+            />
+            <CompareRow
+              label="Marca e modelo"
+              a={`${a.details.marca} ${a.details.modelo}`}
+              b={`${b.details.marca} ${b.details.modelo}`}
+            />
+            <CompareRow
+              label="Ano / combustível"
+              a={`${a.details.anoModelo === 32000 ? "0 km" : a.details.anoModelo} / ${a.details.combustivel}`}
+              b={`${b.details.anoModelo === 32000 ? "0 km" : b.details.anoModelo} / ${b.details.combustivel}`}
+            />
+            <CompareRow
+              label="Mês de referência"
+              a={a.details.mesReferencia.trim()}
+              b={b.details.mesReferencia.trim()}
+            />
+            <CompareRow
+              label="Data da consulta"
+              a={a.details.dataConsulta}
+              b={b.details.dataConsulta}
+            />
+          </CompareTable>
+        </Section>
+      </StepPanel>
       <FinancialScenario
+        step={step}
         idA={a.id}
         idB={b.id}
         modelYearA={a.details.anoModelo}
@@ -219,6 +260,7 @@ function Comparison({ a, b }: { a: Favorite; b: Favorite }) {
         nameA={nameA}
         nameB={nameB}
       />
+      <StepNav steps={STEPS} current={step} onChange={goTo} />
     </>
   );
 }

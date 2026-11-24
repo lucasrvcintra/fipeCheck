@@ -46,7 +46,7 @@ export function InvestmentScenario({
   }
   return (
     <Section
-      step="Passo 5"
+      step="Passo 5 de 5"
       title="E se eu aplicasse esse dinheiro?"
       description="Simule aplicar à vista o valor FIPE de cada carro, em vez de gastá-lo na compra."
     >
